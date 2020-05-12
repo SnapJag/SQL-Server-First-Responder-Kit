@@ -1579,7 +1579,7 @@ BEGIN
         BEGIN  
                SET @individual = SUBSTRING(@OnlySqlHandles, 0, PATINDEX('%,%',@OnlySqlHandles)) ;
                
-               INSERT INTO #only_sql_handles
+               INSERT INTO #only_sql_handles (sql_handle)
                SELECT CAST('' AS XML).value('xs:hexBinary( substring(sql:variable("@individual"), sql:column("t.pos")) )', 'varbinary(max)')
                FROM (SELECT CASE SUBSTRING(@individual, 1, 2) WHEN '0x' THEN 3 ELSE 0 END) AS t(pos)
 			   OPTION (RECOMPILE) ;
@@ -1593,7 +1593,7 @@ BEGIN
                SET @individual = @OnlySqlHandles;
                SET @OnlySqlHandles = NULL;
 
-               INSERT INTO #only_sql_handles
+               INSERT INTO #only_sql_handles (sql_handle)
                SELECT CAST('' AS XML).value('xs:hexBinary( substring(sql:variable("@individual"), sql:column("t.pos")) )', 'varbinary(max)')
                FROM (SELECT CASE SUBSTRING(@individual, 1, 2) WHEN '0x' THEN 3 ELSE 0 END) AS t(pos)
 			   OPTION (RECOMPILE) ;
@@ -1615,7 +1615,7 @@ BEGIN
         BEGIN  
                SET @individual = SUBSTRING(@IgnoreSqlHandles, 0, PATINDEX('%,%',@IgnoreSqlHandles)) ;
                
-               INSERT INTO #ignore_sql_handles
+               INSERT INTO #ignore_sql_handles (sql_handle)
                SELECT CAST('' AS XML).value('xs:hexBinary( substring(sql:variable("@individual"), sql:column("t.pos")) )', 'varbinary(max)')
                FROM (SELECT CASE SUBSTRING(@individual, 1, 2) WHEN '0x' THEN 3 ELSE 0 END) AS t(pos)
 			   OPTION (RECOMPILE) ;
@@ -1629,7 +1629,7 @@ BEGIN
                SET @individual = @IgnoreSqlHandles;
                SET @IgnoreSqlHandles = NULL;
 
-               INSERT INTO #ignore_sql_handles
+               INSERT INTO #ignore_sql_handles (sql_handle)
                SELECT CAST('' AS XML).value('xs:hexBinary( substring(sql:variable("@individual"), sql:column("t.pos")) )', 'varbinary(max)')
                FROM (SELECT CASE SUBSTRING(@individual, 1, 2) WHEN '0x' THEN 3 ELSE 0 END) AS t(pos)
 			   OPTION (RECOMPILE) ;
@@ -1708,7 +1708,7 @@ BEGIN
         BEGIN  
                SET @individual = SUBSTRING(@OnlyQueryHashes, 0, PATINDEX('%,%',@OnlyQueryHashes)) ;
                
-               INSERT INTO #only_query_hashes
+               INSERT INTO #only_query_hashes (query_hash)
                SELECT CAST('' AS XML).value('xs:hexBinary( substring(sql:variable("@individual"), sql:column("t.pos")) )', 'varbinary(max)')
                FROM (SELECT CASE SUBSTRING(@individual, 1, 2) WHEN '0x' THEN 3 ELSE 0 END) AS t(pos)
 			   OPTION (RECOMPILE) ;
@@ -1722,7 +1722,7 @@ BEGIN
                SET @individual = @OnlyQueryHashes;
                SET @OnlyQueryHashes = NULL;
 
-               INSERT INTO #only_query_hashes
+               INSERT INTO #only_query_hashes (query_hash)
                SELECT CAST('' AS XML).value('xs:hexBinary( substring(sql:variable("@individual"), sql:column("t.pos")) )', 'varbinary(max)')
                FROM (SELECT CASE SUBSTRING(@individual, 1, 2) WHEN '0x' THEN 3 ELSE 0 END) AS t(pos)
 			   OPTION (RECOMPILE) ;
@@ -1751,7 +1751,7 @@ BEGIN
         BEGIN  
                SET @individual = SUBSTRING(@IgnoreQueryHashes, 0, PATINDEX('%,%',@IgnoreQueryHashes)) ;
                
-               INSERT INTO #ignore_query_hashes
+               INSERT INTO #ignore_query_hashes (query_hash)
                SELECT CAST('' AS XML).value('xs:hexBinary( substring(sql:variable("@individual"), sql:column("t.pos")) )', 'varbinary(max)')
                FROM (SELECT CASE SUBSTRING(@individual, 1, 2) WHEN '0x' THEN 3 ELSE 0 END) AS t(pos) 
 			   OPTION (RECOMPILE) ;
@@ -1763,7 +1763,7 @@ BEGIN
                SET @individual = @IgnoreQueryHashes ;
                SET @IgnoreQueryHashes = NULL ;
 
-               INSERT INTO #ignore_query_hashes
+               INSERT INTO #ignore_query_hashes (query_hash)
                SELECT CAST('' AS XML).value('xs:hexBinary( substring(sql:variable("@individual"), sql:column("t.pos")) )', 'varbinary(max)')
                FROM (SELECT CASE SUBSTRING(@individual, 1, 2) WHEN '0x' THEN 3 ELSE 0 END) AS t(pos) 
 			   OPTION (RECOMPILE) ;
@@ -1774,7 +1774,7 @@ END;
 IF @ConfigurationDatabaseName IS NOT NULL
 BEGIN
    RAISERROR(N'Reading values from Configuration Database', 0, 1) WITH NOWAIT;
-   DECLARE @config_sql NVARCHAR(MAX) = N'INSERT INTO #configuration SELECT parameter_name, value FROM '
+   DECLARE @config_sql NVARCHAR(MAX) = N'INSERT INTO #configuration (parameter_name, value) SELECT parameter_name, value FROM '
         + QUOTENAME(@ConfigurationDatabaseName)
         + '.' + QUOTENAME(@ConfigurationSchemaName)
         + '.' + QUOTENAME(@ConfigurationTableName)
@@ -2820,7 +2820,7 @@ IF @ExpertMode > 0
 BEGIN
 RAISERROR(N'Gathering row estimates', 0, 1) WITH NOWAIT;
 WITH XMLNAMESPACES ('http://schemas.microsoft.com/sqlserver/2004/07/showplan' AS p )
-INSERT INTO #est_rows
+INSERT INTO #est_rows (QueryHash, estimated_rows)
 SELECT DISTINCT 
 		CONVERT(BINARY(8), RIGHT('0000000000000000' + SUBSTRING(c.n.value('@QueryHash', 'VARCHAR(18)'), 3, 18), 16), 2) AS QueryHash,
 		c.n.value('(/p:StmtSimple/@StatementEstRows)[1]', 'FLOAT') AS estimated_rows
@@ -2912,7 +2912,7 @@ RAISERROR(N'Gathering stored procedure costs', 0, 1) WITH NOWAIT;
     qc.SqlHandle
   FROM QueryCost qc
 )
-INSERT INTO #proc_costs
+INSERT INTO #proc_costs (PlanTotalQuery, PlanHandle, SqlHandle)
 SELECT qcu.PlanTotalQuery, PlanHandle, SqlHandle
 FROM QueryCostUpdate AS qcu
 OPTION (RECOMPILE);
@@ -3476,7 +3476,7 @@ IF @ExpertMode > 0
 BEGIN
 RAISERROR('Gathering stats information', 0, 1) WITH NOWAIT;
 WITH XMLNAMESPACES('http://schemas.microsoft.com/sqlserver/2004/07/showplan' AS p)
-INSERT INTO #stats_agg
+INSERT INTO #stats_agg ( [SqlHandle], [LastUpdate], [ModificationCount], [SamplingPercent], [Statistics], [Table], [Schema], [Database] )
 SELECT qp.SqlHandle,
 	   x.c.value('@LastUpdate', 'DATETIME2(7)') AS LastUpdate,
 	   x.c.value('@ModificationCount', 'BIGINT') AS ModificationCount,
@@ -3616,7 +3616,7 @@ SELECT  qp.QueryHash,
 FROM    #query_plan qp
 CROSS APPLY qp.query_plan.nodes('/p:QueryPlan/p:TraceFlags/p:TraceFlag') AS q(n)
 )
-INSERT INTO #trace_flags
+INSERT INTO #trace_flags ( [SqlHandle], [QueryHash], [global_trace_flags], [session_trace_flags] )
 SELECT DISTINCT tf1.SqlHandle , tf1.QueryHash,
     STUFF((
           SELECT DISTINCT ', ' + CONVERT(VARCHAR(5), tf2.trace_flag)
@@ -4091,7 +4091,7 @@ IF EXISTS ( SELECT 1/0
 		BEGIN		
 		RAISERROR(N'Inserting to #missing_index_xml', 0, 1) WITH NOWAIT;
 		WITH XMLNAMESPACES ( 'http://schemas.microsoft.com/sqlserver/2004/07/showplan' AS p )
-		INSERT 	#missing_index_xml
+		INSERT INTO #missing_index_xml ([QueryHash], [SqlHandle], [impact], [index_xml])
 		SELECT qp.QueryHash,
 		       qp.SqlHandle,
 		       c.mg.value('@Impact', 'FLOAT') AS Impact,
@@ -4103,7 +4103,7 @@ IF EXISTS ( SELECT 1/0
 		
 		RAISERROR(N'Inserting to #missing_index_schema', 0, 1) WITH NOWAIT;	
 		WITH XMLNAMESPACES ( 'http://schemas.microsoft.com/sqlserver/2004/07/showplan' AS p )
-		INSERT #missing_index_schema
+		INSERT INTO #missing_index_schema ([QueryHash], [SqlHandle], [impact], [database_name], [schema_name], [table_name], [index_xml])
 		SELECT mix.QueryHash, mix.SqlHandle, mix.impact,
 		       c.mi.value('@Database', 'NVARCHAR(128)'),
 		       c.mi.value('@Schema', 'NVARCHAR(128)'),
@@ -4115,7 +4115,7 @@ IF EXISTS ( SELECT 1/0
 		
 		RAISERROR(N'Inserting to #missing_index_usage', 0, 1) WITH NOWAIT;
 		WITH XMLNAMESPACES ( 'http://schemas.microsoft.com/sqlserver/2004/07/showplan' AS p )
-		INSERT #missing_index_usage
+		INSERT INTO #missing_index_usage ([QueryHash], [SqlHandle], [impact], [database_name], [schema_name], [table_name], [usage], [index_xml])
 		SELECT ms.QueryHash, ms.SqlHandle, ms.impact, ms.database_name, ms.schema_name, ms.table_name,
 				c.cg.value('@Usage', 'NVARCHAR(128)'),
 				c.cg.query('.')
@@ -4125,7 +4125,7 @@ IF EXISTS ( SELECT 1/0
 		
 		RAISERROR(N'Inserting to #missing_index_detail', 0, 1) WITH NOWAIT;
 		WITH XMLNAMESPACES ( 'http://schemas.microsoft.com/sqlserver/2004/07/showplan' AS p )
-		INSERT #missing_index_detail
+		INSERT INTO #missing_index_detail ([QueryHash], [SqlHandle], [impact], [database_name], [schema_name], [table_name], [usage], [column_name])
 		SELECT miu.QueryHash,
 		       miu.SqlHandle,
 		       miu.impact,
@@ -4139,7 +4139,7 @@ IF EXISTS ( SELECT 1/0
 		OPTION (RECOMPILE);
 		
 		RAISERROR(N'Inserting to missing indexes to #missing_index_pretty', 0, 1) WITH NOWAIT;
-		INSERT #missing_index_pretty 
+		INSERT INTO #missing_index_pretty 
 		       ( QueryHash,   SqlHandle,   impact,   database_name,   schema_name,   table_name, equality, inequality, include, executions, query_cost, creation_hours, is_spool )
 		SELECT DISTINCT m.QueryHash, m.SqlHandle, m.impact, m.database_name, m.schema_name, m.table_name
 		, STUFF((   SELECT DISTINCT N', ' + ISNULL(m2.column_name, '') AS column_name
@@ -4184,7 +4184,7 @@ IF EXISTS ( SELECT 1/0
 		
 		RAISERROR(N'Inserting to #index_spool_ugly', 0, 1) WITH NOWAIT;
 		WITH XMLNAMESPACES('http://schemas.microsoft.com/sqlserver/2004/07/showplan' AS p)
-		INSERT #index_spool_ugly 
+		INSERT INTO #index_spool_ugly 
 		        (QueryHash, SqlHandle, impact, database_name, schema_name, table_name, equality, inequality, include, executions, query_cost, creation_hours)
 		SELECT p.QueryHash, 
 		       p.SqlHandle,                                                                               
@@ -4209,7 +4209,7 @@ IF EXISTS ( SELECT 1/0
 		WHERE  r.relop.exist('/p:RelOp[@PhysicalOp="Index Spool" and @LogicalOp="Eager Spool"]') = 1
 
 		RAISERROR(N'Inserting to spools to #missing_index_pretty', 0, 1) WITH NOWAIT;
-		INSERT #missing_index_pretty
+		INSERT INTO #missing_index_pretty
 			(QueryHash, SqlHandle, impact, database_name, schema_name, table_name, equality, inequality, include, executions, query_cost, creation_hours, is_spool)
 		SELECT DISTINCT 
 		       isu.QueryHash,

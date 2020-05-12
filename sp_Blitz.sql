@@ -8208,7 +8208,7 @@ IF @ProductVersionMajor >= 10 AND  NOT EXISTS ( SELECT  1
 								
 								INSERT  INTO #driveInfo
 										( drive, SIZE )
-										EXEC master..xp_fixeddrives;
+										EXEC master.dbo.xp_fixeddrives;
 								
 								INSERT  INTO #BlitzResults
 										( CheckID ,
